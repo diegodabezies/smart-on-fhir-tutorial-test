@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <script src="dist/fhir-client-v2.js"></script>
+  <<head>
+    <script src="./lib/js/fhir-client-v0.1.12.js"></script>
+
+    <!-- Prevent session bleed caused by single threaded embedded browser and sessionStorage API -->
+    <!-- https://github.com/cerner/fhir-client-cerner-additions -->
+    <script src="./lib/js/fhir-client-cerner-additions-1.0.0.js"></script>
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
