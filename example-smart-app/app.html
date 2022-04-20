@@ -329,6 +329,7 @@
       let currentUserFhirUrl;
       let fhirClient = {};
       FHIR.oauth2.ready(function(client){
+        console.log(client);
         myApp.smart = client;
         currentPatient = client.patient;
         fhirClient = client;
@@ -341,10 +342,10 @@
       }
       async function getDataFromPatient() {
         //get data from patient
-          fhirClient.api.read({
+        $.when(fhirClient.api.read({
             type: 'Patient',
             id: currentPatient.id,
-          }).done(function (response) {
+          })).done(function (response) {
             userResult= response.data;
           console.log(userResult);
           let html = `
