@@ -324,18 +324,16 @@
 
     <script>
       let patient = {};
-      let myApp = {};
       let currentUserFhirUrl;
       let fhirClient = {};
       FHIR.oauth2.ready(function (client) {
-        myApp.smart = client;
         patient = client.patient;
         fhirClient = client;
         doRequests();
       });
 
       async function doRequests() {
-        console.log(myApp.smart);
+        console.log(fhirClient);
         getDataFromPatient();
       }
       async function createObservation() {
