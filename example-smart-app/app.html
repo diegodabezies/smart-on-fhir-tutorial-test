@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <script src="./lib/js/fhir-client-v0.1.12.js"></script>
 
     <!-- Prevent session bleed caused by single threaded embedded browser and sessionStorage API -->
@@ -324,18 +324,18 @@
 
     <script>
       let patient = {};
+      let myApp = {};
       let currentUserFhirUrl;
       let fhirClient = {};
-      console.log('antes');
       FHIR.oauth2.ready(function (client) {
-      console.log('despues');
+        myApp.smart = client;
         patient = client.patient;
         fhirClient = client;
         doRequests();
       });
 
       async function doRequests() {
-        console.log(fhirClient);
+        console.log(myApp.smart);
         getDataFromPatient();
       }
       async function createObservation() {
