@@ -1,25 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <link rel='stylesheet' type='text/css' href='./src/css/example-smart-app.css'>
-    <title>Example-SMART-App</title>
-  </head>
-  <body>
+<html>
 
-    <!-- FHIR Client JS Library -->
-    <script src='./lib/js/fhir-client-v0.1.12.js'></script>
-    <script>
-      FHIR.oauth2.authorize({
-        'client_id': '91207c84-e9ce-46bd-bc45-a993ed504dba', //Your app client ID
-        'scope':  'launch user/*.* openid profile' //'patient/*.read launch'
-      });
-    </script>
-    <div class="spinner">
-      <div class="bounce1"></div>
-      <div class="bounce2"></div>
-      <div class="bounce3"></div>
-    </div>
-  </body>
+<head>
+	<script src='./lib/js/fhir-client-v0.1.12.js'></script>
+
+    <!-- Prevent session bleed caused by single threaded embedded browser and sessionStorage API -->
+    <!-- https://github.com/cerner/fhir-client-cerner-additions -->
+    <script src='./lib/js/fhir-client-cerner-additions-1.0.0.js'></script>
+	</script>
+</head>
+
+<body>
+	<p>Anorera request for authorizing user</p>
+
+	<script>
+		FHIR.oauth2.authorize({
+      'client_id': 'efd10911-6248-472a-ac85-f9998677b4f9',// LOGICA'5aa5098f-7f6d-4221-85c3-b3924d9fa11e',	//cerner: efd10911-6248-472a-ac85-f9998677b4f9
+      'scope':  'patient/Patient.read patient/Patient.write patient/Patient.search patient/Observation.read patient/Observation.write patient/Observation.search patient/Encounter.create openid profile ',
+      'redirect_uri': 'https://agustin9998.github.io/smart-on-fhir-tutorial/example-smart-app/app.html'
+    });
+	</script>
+
+</body>
+
 </html>

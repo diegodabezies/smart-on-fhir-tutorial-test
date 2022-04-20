@@ -17367,9 +17367,6 @@ BBClient.authorize = function(params, errback){
   }
 
   var launch = urlParam("launch");
-
-  console.log("launch identifier: " + launch);
-
   if (launch){
     if (!params.client.scope.match(/launch/)){
       params.client.scope += " launch";
@@ -17383,8 +17380,6 @@ BBClient.authorize = function(params, errback){
       params.server = server;
     }
   }
-
-  console.log("iss: " + server)
 
   if (urlParam("patientId")){
     params.fake_token_response = params.fake_token_response || {};
