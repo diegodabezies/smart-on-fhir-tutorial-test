@@ -328,7 +328,9 @@
       let myApp = {};
       let currentUserFhirUrl;
       let fhirClient = {};
+      console.log('antes');
       FHIR.oauth2.ready(function(client){
+      console.log('entro');
         console.log(client);
         myApp.smart = client;
         currentPatient = client.patient;
