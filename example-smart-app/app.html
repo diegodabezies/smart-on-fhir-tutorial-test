@@ -2,8 +2,11 @@
 <html>
   <head>
     <script src="./lib/js/fhir-client-v0.1.12.js"></script>
-    <script src="./lib/js/cerner-smart-embeddable-lib-1.0.0.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+
+    <!-- Prevent session bleed caused by single threaded embedded browser and sessionStorage API -->
+    <!-- https://github.com/cerner/fhir-client-cerner-additions -->
+    <script src="./lib/js/fhir-client-cerner-additions-1.0.0.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
 
@@ -310,12 +313,8 @@
                   Run Algorithm
                 </button>
 
-                <table id="obs_table">
-                  <tr>
-                    <td>Code</td>
-                    <td>Value</td>
-                  </tr>
-                </table>
+                <h1>Observations</h1>
+                <div id="obs_table"></div>
               </div>
             </div>
           </div>
@@ -337,41 +336,217 @@
 
       async function doRequests() {
         console.log(myApp.smart);
-        /*let loincs = [ encodeURIComponent("http://loinc.org|4548-4") ] //4548-4 = HgA1C  //4544-3 = hematocrit
-      console.log(loincs);
-      let url = myApp.smart.state.serverUrl+"/Observation?patient="+myApp.smart.patient.id+"&code="+loincs.join(",");
-      console.log(url + "url");
-      let obs = await fetch(url,{
-        headers:{  
-          "Accept":"application/json+fhir",
-          "Authorization":"Bearer "+myApp.smart.state.tokenResponse.access_token
-        }
-        }).then(function(data){
-          return data
-      })
-
-      let response = await obs.json()
-
-      console.log('response: '+JSON.stringify(response));
-      console.log('llego4');
-
-      let toInsert = ""
-
-      if (!response.entry || !response.entry[0]){
-
-        toInsert += "We could not find you were tested for HgA1C at this provider."
-
-      }else{
-        
-        toInsert += "Your HgA1C was tested on "+response.entry[0].resource.effectiveDateTime+"<br/><br/>"
-
-        toInsert += "Your HgA1C was "+response.entry[0].resource.valueQuantity.value+"<br/><br/>"
-
-        toInsert += "<a href='https://en.wikipedia.org/wiki/Glycated_hemoglobin'>According to wikipedia</a>, A1c is measured primarily to determine the three-month average blood sugar level and can be used as a diagnostic test for diabetes mellitus.  <5.7%	Normal, 5.7-6.4%	Prediabetes, >6.5%	Diabetes."
-      }
-*/
-
         getDataFromPatient();
+      }
+      async function createObservation() {
+        console.log("Creating observation...");
+        data = {
+          resourceType: "Observation",
+          status: "final",
+          category: [
+            {
+              coding: [
+                {
+                  system:
+                    "http://terminology.hl7.org/CodeSystem/observation-category",
+                  code: "vital-signs",
+                  display: "Vital Signs",
+                },
+              ],
+            },
+          ],
+          code: {
+            coding: [
+              {
+                system: "http://loinc.org",
+                code: "29463-7",
+                display: "Body Weight",
+              },
+              {
+                system: "http://loinc.org",
+                code: "3141-9",
+                display: "Body weight Measured",
+              },
+              {
+                system: "http://snomed.info/sct",
+                code: "27113001",
+                display: "Body weight",
+              },
+              {
+                system: "http://acme.org/devices/clinical-codes",
+                code: "body-weight",
+                display: "Body Weight",
+              },
+            ],
+          },
+          subject: {
+            reference: `Patient/${patient.id}`,
+          },
+          effectiveDateTime: "2016-03-28",
+          valueQuantity: {
+            value: 185,
+            unit: "lbs",
+            system: "http://unitsofmeasure.org",
+            code: "[lb_av]",
+          },
+        };
+        fhirClient.api.create({
+          type: "Observation",
+          data: data,
+        });
+      }
+      async function createEncounter() {
+        console.log("Creating encounter...");
+        data = {
+          resourceType: "Encounter",
+          class: {
+            system: "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+            code: "IMP",
+            display: "inpatient encounter",
+          },
+          actualPeriod: {
+            start: "2013-03-11",
+            end: "2013-03-20",
+          },
+          type: [
+            {
+              coding: [
+                {
+                  system: "http://snomed.info/sct",
+                  code: "11429006",
+                  display: "Consultation",
+                },
+              ],
+            },
+          ],
+          status: "planned",
+          patient: {
+            reference: `Patient/${patient.id}`,
+          },
+          subject: {
+            reference: `Patient/${patient.id}`,
+          },
+          text: {
+            status: "generated",
+            div: '<div xmlns="http://www.w3.org/1999/xhtml">Encounter with patient @example who is at home</div>',
+          },
+        };
+
+        /*{
+                resourceType: "Encounter",
+                identifier: [
+                  {
+                    use: "official",
+                    system: "http://www.amc.nl/zorgportal/identifiers/visits",
+                    value: "v1451",
+                  },
+                ],
+                status: "in-progress",
+                statusHistory: [
+                  {
+                    status: "in-progress",
+                    period: {
+                      start: "2013-03-08",
+                    },
+                  },
+                ],
+                class: {
+                  system: "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+                  code: "IMP",
+                  display: "inpatient encounter",
+                },
+                type: [
+                  {
+                    coding: [
+                      {
+                        system: "http://snomed.info/sct",
+                        code: "183807002",
+                        display: "Inpatient stay for nine days",
+                      },
+                    ],
+                  },
+                ],
+                priority: {
+                  coding: [
+                    {
+                      system: "http://snomed.info/sct",
+                      code: "394849002",
+                      display: "High priority",
+                    },
+                  ],
+                },
+                subject: {
+                  reference: `Patient/${patient.id}`,
+                },
+                participant: [
+                  {
+                    type: [
+                      {
+                        coding: [
+                          {
+                            system:
+                              "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+                            code: "PART",
+                          },
+                        ],
+                      },
+                    ],
+                    actor: {
+                      reference: `Practitioner/12742069`,
+                    },
+                  },
+                ],
+                actualPeriod: {
+                  start: "2013-03-11",
+                  end: "2013-03-20",
+                },
+                reason: [
+                  {
+                    concept: {
+                      text: "The patient seems to suffer from bilateral pneumonia and renal insufficiency, most likely due to chemotherapy.",
+                    },
+                  },
+                ],
+                diagnosis: [
+                  {
+                    condition: {
+                      reference: "Condition/stroke",
+                    },
+                    use: {
+                      coding: [
+                        {
+                          system:
+                            "http://terminology.hl7.org/CodeSystem/diagnosis-role",
+                          code: "AD",
+                          display: "Admission diagnosis",
+                        },
+                      ],
+                    },
+                    rank: 1,
+                  },
+                ],
+              };*/
+        fhirClient.api
+          .create({
+            type: "Encounter",
+            data: data,
+          })
+          .then(function () {
+            console.log("Encounter created succesfully");
+          });
+      }
+      async function updatePatientName() {
+        console.log("Updating patient...");
+        patient.name[0].family[0] = "NewName";
+        fhirClient.api
+          .update({
+            type: patient.resourceType,
+            data: JSON.stringify(patient),
+            id: patient.id,
+          })
+          .then(function () {
+            console.log("Patient updated succesfully");
+          });
       }
       async function getDataFromPatient() {
         //get data from patient
@@ -384,24 +559,24 @@
             userResult = response.data;
             console.log(userResult);
             let html = `
-                            <div class="isolate -space-y-px rounded-md shadow-sm">
-                              <div class="relative border border-gray-300 rounded-md rounded-b-none px-3 py-2 focus-within:z-10 focus-within:ring-1 focus-within:ring-indigo-600 focus-within:border-indigo-600">
-                                <input type="text" name="name" id="name" class="block w-full border-0 bg-transparent p-0 text-blue-900 font-bold placeholder-white-500 focus:ring-0 sm:text-sm" value="${userResult.resourceType}" disabled>
-                              </div>
-                              <div class="relative border border-gray-300 px-3 py-2 focus-within:z-10 focus-within:ring-1 focus-within:ring-indigo-600 focus-within:border-indigo-600">
-                                <label for="name" class="block text-xs font-medium text-gray-900">Name</label>
-                                <input type="text" name="name" id="name" class="block w-full border-0 bg-transparent p-0 text-gray-900 placeholder-white-500 focus:ring-0 sm:text-sm" value="${userResult.name[0].text}" disabled>
-                              </div>
-                              <div class="relative border border-gray-300 px-3 py-2 focus-within:z-10 focus-within:ring-1 focus-within:ring-indigo-600 focus-within:border-indigo-600">
-                                <label for="job-title" class="block text-xs font-medium text-gray-900">Birth Date</label>
-                                <input type="text" name="job-title" id="job-title" class="block w-full bg-transparent border-0 p-0 text-gray-900 placeholder-white-500 focus:ring-0 sm:text-sm"  value="${userResult.birthDate}" disabled>
-                              </div>
-                              <div class="relative border border-gray-300 rounded-md rounded-t-none px-3 py-2 focus-within:z-10 focus-within:ring-1 focus-within:ring-indigo-600 focus-within:border-indigo-600">
-                                <label for="job-title" class="block text-xs font-medium text-gray-900">Gender</label>
-                                <input type="text" name="job-title" id="job-title" class="block w-full bg-transparent border-0 p-0 text-gray-900 placeholder-white-500 focus:ring-0 sm:text-sm"  value="${userResult.gender}" disabled>
-                              </div>
-                            </div>
-              `;
+                                  <div class="isolate -space-y-px rounded-md shadow-sm">
+                                    <div class="relative border border-gray-300 rounded-md rounded-b-none px-3 py-2 focus-within:z-10 focus-within:ring-1 focus-within:ring-indigo-600 focus-within:border-indigo-600">
+                                      <input type="text" name="name" id="name" class="block w-full border-0 bg-transparent p-0 text-blue-900 font-bold placeholder-white-500 focus:ring-0 sm:text-sm" value="${userResult.resourceType}" disabled>
+                                    </div>
+                                    <div class="relative border border-gray-300 px-3 py-2 focus-within:z-10 focus-within:ring-1 focus-within:ring-indigo-600 focus-within:border-indigo-600">
+                                      <label for="name" class="block text-xs font-medium text-gray-900">Name</label>
+                                      <input type="text" name="name" id="name" class="block w-full border-0 bg-transparent p-0 text-gray-900 placeholder-white-500 focus:ring-0 sm:text-sm" value="${userResult.name[0].text}" disabled>
+                                    </div>
+                                    <div class="relative border border-gray-300 px-3 py-2 focus-within:z-10 focus-within:ring-1 focus-within:ring-indigo-600 focus-within:border-indigo-600">
+                                      <label for="job-title" class="block text-xs font-medium text-gray-900">Birth Date</label>
+                                      <input type="text" name="job-title" id="job-title" class="block w-full bg-transparent border-0 p-0 text-gray-900 placeholder-white-500 focus:ring-0 sm:text-sm"  value="${userResult.birthDate}" disabled>
+                                    </div>
+                                    <div class="relative border border-gray-300 rounded-md rounded-t-none px-3 py-2 focus-within:z-10 focus-within:ring-1 focus-within:ring-indigo-600 focus-within:border-indigo-600">
+                                      <label for="job-title" class="block text-xs font-medium text-gray-900">Gender</label>
+                                      <input type="text" name="job-title" id="job-title" class="block w-full bg-transparent border-0 p-0 text-gray-900 placeholder-white-500 focus:ring-0 sm:text-sm"  value="${userResult.gender}" disabled>
+                                    </div>
+                                  </div>
+                    `;
             $("#info").html(html);
             patient = userResult;
             getObservations();
@@ -420,36 +595,26 @@
 
       $("#runButton").click(function () {
         const message = anoreraAlgorithm();
+        //updatePatientName();
+        createObservation();
+        createEncounter();
         alert(message);
-
-        //trying to create encounter
-        patient.name[0].family[0] = "NewName";
-        console.log(fhirClient.patient);
-        fhirClient.encounter
-          .create({
-            type: patient.resourceType,
-            data: JSON.stringify(patient),
-            id: patient.id,
-          })
-          .then(function () {
-            console.log("family name changed");
-            alert("family name changed");
-          });
       });
 
       function displayObservation(observation) {
         var table = document.getElementById("obs_table");
-        var row = table.insertRow(1);
-        var cell1 = row.insertCell(0);
-        var cell2 = row.insertCell(1);
-        cell1.innerHTML = observation.code.coding[0].code;
-        cell2.innerHTML = observation.valueQuantity.value;
+        table.innerHTML += observation.resource.text.div;
+        table.innerHTML += "<br><br>";
       }
       function getObservations() {
-        fhirClient
-          .fetchAll({ type: "Observation" })
+        fhirClient.patient.api
+          .search({
+            type: "Observation",
+            count: 5,
+          })
           .then(function (results, refs) {
-            results.forEach(function (observation) {
+            console.log(results);
+            results.data.entry.forEach(function (observation) {
               displayObservation(observation);
             });
           });
