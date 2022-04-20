@@ -1,11 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="./lib/js/fhir-client-v0.1.12.js"></script>
-
-    <!-- Prevent session bleed caused by single threaded embedded browser and sessionStorage API -->
-    <!-- https://github.com/cerner/fhir-client-cerner-additions -->
-    <script src="./lib/js/fhir-client-cerner-additions-1.0.0.js"></script>
+    <script src="dist/fhir-client-v2.js"></script>
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
@@ -313,8 +309,12 @@
                   Run Algorithm
                 </button>
 
-                <h1>Observations</h1>
-                <div id="obs_table"></div>
+                <table id="obs_table">
+                  <tr>
+                    <td>Code</td>
+                    <td>Value</td>
+                  </tr>
+                </table>
               </div>
             </div>
           </div>
@@ -327,106 +327,50 @@
       let myApp = {};
       let currentUserFhirUrl;
       let fhirClient = {};
-      FHIR.oauth2.ready(function (client) {
+      FHIR.oauth2.ready().then(function (client) {
         myApp.smart = client;
-        patient = client.patient;
+        currentUserFhirUrl = client.user.fhirUser;
         fhirClient = client;
         doRequests();
       });
 
       async function doRequests() {
         console.log(myApp.smart);
+        /*let loincs = [ encodeURIComponent("http://loinc.org|4548-4") ] //4548-4 = HgA1C  //4544-3 = hematocrit
+      console.log(loincs);
+      let url = myApp.smart.state.serverUrl+"/Observation?patient="+myApp.smart.patient.id+"&code="+loincs.join(",");
+      console.log(url + "url");
+      let obs = await fetch(url,{
+        headers:{  
+          "Accept":"application/json+fhir",
+          "Authorization":"Bearer "+myApp.smart.state.tokenResponse.access_token
+        }
+        }).then(function(data){
+          return data
+      })
+
+      let response = await obs.json()
+
+      console.log('response: '+JSON.stringify(response));
+      console.log('llego4');
+
+      let toInsert = ""
+
+      if (!response.entry || !response.entry[0]){
+
+        toInsert += "We could not find you were tested for HgA1C at this provider."
+
+      }else{
+        
+        toInsert += "Your HgA1C was tested on "+response.entry[0].resource.effectiveDateTime+"<br/><br/>"
+
+        toInsert += "Your HgA1C was "+response.entry[0].resource.valueQuantity.value+"<br/><br/>"
+
+        toInsert += "<a href='https://en.wikipedia.org/wiki/Glycated_hemoglobin'>According to wikipedia</a>, A1c is measured primarily to determine the three-month average blood sugar level and can be used as a diagnostic test for diabetes mellitus.  <5.7%	Normal, 5.7-6.4%	Prediabetes, >6.5%	Diabetes."
+      }
+*/
+
         getDataFromPatient();
-      }
-      async function createObservation() {
-        console.log("Creating observation...");
-        data = {
-          resourceType: "Observation",
-          status: "final",
-          category: [
-            {
-              coding: [
-                {
-                  system:
-                    "http://terminology.hl7.org/CodeSystem/observation-category",
-                  code: "vital-signs",
-                  display: "Vital Signs",
-                },
-              ],
-            },
-          ],
-          code: {
-            coding: [
-              {
-                system: "http://loinc.org",
-                code: "29463-7",
-                display: "Body Weight",
-              },
-              {
-                system: "http://loinc.org",
-                code: "3141-9",
-                display: "Body weight Measured",
-              },
-              {
-                system: "http://snomed.info/sct",
-                code: "27113001",
-                display: "Body weight",
-              },
-              {
-                system: "http://acme.org/devices/clinical-codes",
-                code: "body-weight",
-                display: "Body Weight",
-              },
-            ],
-          },
-          subject: {
-            reference: `Patient/${patient.id}`,
-          },
-          effectiveDateTime: "2016-03-28",
-          valueQuantity: {
-            value: 185,
-            unit: "lbs",
-            system: "http://unitsofmeasure.org",
-            code: "[lb_av]",
-          },
-        };
-        /*{
-          resourceType: "Observation",
-          code: {
-            coding: [
-              {
-                system: "http://loinc.org",
-                code: "8867-4",
-                display: "Heart rate",
-              },
-            ],
-          },
-          status: "final",
-          subject: { reference: `Patient/${patient.id}` },
-          effectiveDateTime: "2019-01-01T00:00:00+00:00",
-          valueQuantity: { value: 80, unit: "bpm" },
-        };*/
-        fhirClient.api
-          .create({
-            type: "Observation",
-            data: data,
-          })
-          .then(function () {
-            console.log("Observation created succesfully");
-          });
-      }
-      async function updatePatientName() {
-        console.log("Updating patient...");
-        patient.name[0].family[0] = "NewName";
-        fhirClient.api
-          .update({
-            type: patient.resourceType,
-            data: JSON.stringify(patient),
-            id: patient.id,
-          })
-          .then(function () {
-            console.log("Patient updated succesfully");
-          });
       }
       async function getDataFromPatient() {
         //get data from patient
@@ -475,22 +419,36 @@
 
       $("#runButton").click(function () {
         const message = anoreraAlgorithm();
-        //updatePatientName();
-        createObservation();
         alert(message);
+
+        //trying to create encounter
+        patient.name[0].family[0] = "NewName";
+        console.log(fhirClient.patient);
+        fhirClient.encounter
+          .create({
+            type: patient.resourceType,
+            data: JSON.stringify(patient),
+            id: patient.id,
+          })
+          .then(function () {
+            console.log("family name changed");
+            alert("family name changed");
+          });
       });
 
       function displayObservation(observation) {
         var table = document.getElementById("obs_table");
-        table.innerHTML += observation.resource.text.div;
-        table.innerHTML += "<br><br>";
+        var row = table.insertRow(1);
+        var cell1 = row.insertCell(0);
+        var cell2 = row.insertCell(1);
+        cell1.innerHTML = observation.code.coding[0].code;
+        cell2.innerHTML = observation.valueQuantity.value;
       }
       function getObservations() {
-        fhirClient.patient.api
-          .search({ type: "Observation", count: 5 })
+        fhirClient
+          .fetchAll({ type: "Observation" })
           .then(function (results, refs) {
-            console.log(results);
-            results.data.entry.forEach(function (observation) {
+            results.forEach(function (observation) {
               displayObservation(observation);
             });
           });
