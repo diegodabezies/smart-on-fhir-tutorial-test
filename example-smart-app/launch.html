@@ -2,7 +2,11 @@
 <html>
 
 <head>
-	<script src='dist/fhir-client-v2.js'>
+	<script src='./lib/js/fhir-client-v0.1.12.js'></script>
+
+    <!-- Prevent session bleed caused by single threaded embedded browser and sessionStorage API -->
+    <!-- https://github.com/cerner/fhir-client-cerner-additions -->
+    <script src='./lib/js/fhir-client-cerner-additions-1.0.0.js'></script>
 	</script>
 </head>
 
